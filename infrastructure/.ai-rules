@@ -1,0 +1,9 @@
+Strict Guardrails for this Project:
+
+You must ALWAYS read, respect, and strictly follow the architecture, tech stacks, and constraints defined in architecture-prd.md and project-manual.md located in the workspace root.
+
+The project is an enterprise-grade AI Company OS. The backend (FastAPI, Redis, Postgres) is the core product, NOT a game. Do not prioritize frontend aesthetics over backend robustness.
+
+Before generating any code, database schema, or infrastructure modification, cross-check with project-manual.md to see our current phase and step. Do not skip steps or invent features out of scope.
+
+If any user request conflicts with the rules in architecture-prd.md, you must explicitly warn the user and ask for confirmation before proceeding.

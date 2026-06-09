@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # 1. ฐานข้อมูลหลัก และ ความทรงจำของ AI
+  postgres:
+    image: ankane/pgvector:latest # PostgreSQL ที่ติดตั้ง pgvector มาให้พร้อมใช้งาน
+    container_name: ai_office_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: supersecretpassword # เปลี่ยนรหัสผ่านได้ตามต้องการ
+      POSTGRES_DB: ai_company_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
+
+  # 2. ระบบส่งข้อมูล Real-time และ คิวงาน
+  redis:
+    image: redis:7-alpine
+    container_name: ai_office_redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+volumes:
+  pgdata:
