@@ -61,8 +61,6 @@ export default function Home() {
   
   const [editAgentId, setEditAgentId] = useState<number | null>(null);
   
-  const [editAgentId, setEditAgentId] = useState<number | null>(null);
-  
   const showSpeechBubbleRef = useRef<((id: number, text: string) => void) | null>(null);
   
   const [providerStatuses, setProviderStatuses] = useState<{ [key: number]: string }>({});
