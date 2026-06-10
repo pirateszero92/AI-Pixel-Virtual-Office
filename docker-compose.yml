@@ -38,6 +38,7 @@ services:
     restart: always
     volumes:
       - ./backend/agent_workspace:/app/agent_workspace
+      - ./backend/avatars:/app/avatars
 
   frontend:
     build:

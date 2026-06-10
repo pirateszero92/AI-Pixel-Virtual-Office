@@ -453,18 +453,11 @@ export default function Home() {
                 const tex = await PIXI.Assets.load(agent.avatar);
                 const sprite = new PIXI.Sprite(tex);
                 
-                // ให้ตัวละครยืนเต็มตัว ไม่ตัดขอบวงกลม ปรับขนาดให้สมส่วน
-                // ตั้งความสูงเป็นหลักตาม Scale ที่กำหนด (ค่าเริ่มต้น 80 px = Scale 1.0)
                 const baseHeight = 80;
                 const finalHeight = baseHeight * (agent.sprite_scale || 1.0);
                 const scale = finalHeight / tex.height;
                 sprite.scale.set(scale);
-                sprite.anchor.set(0.5, 1); // จุดยึดอยู่ที่พื้นตรงกลางเท้า
-                
-                // ทำให้คลิกได้ (Interactive)
-                sprite.eventMode = 'static';
-                sprite.cursor = 'pointer';
-                sprite.on('pointerdown', () => handleOpenChat(agent));
+                sprite.anchor.set(0.5, 1);
                 
                 spriteContainer.addChild(sprite);
              } catch (e) {
@@ -472,11 +465,6 @@ export default function Home() {
                 circle.circle(0, 0, 15);
                 const colors = [0x4ade80, 0xfacc15, 0xf472b6, 0x2dd4bf];
                 circle.fill(colors[index % colors.length]);
-                
-                circle.eventMode = 'static';
-                circle.cursor = 'pointer';
-                circle.on('pointerdown', () => handleOpenChat(agent));
-                
                 spriteContainer.addChild(circle);
              }
           } else {
@@ -486,6 +474,13 @@ export default function Home() {
               circle.fill(colors[index % colors.length]);
               spriteContainer.addChild(circle);
           }
+          
+          spriteContainer.eventMode = 'static';
+          spriteContainer.cursor = 'pointer';
+          spriteContainer.on('pointerdown', (e) => {
+              e.stopPropagation(); // Prevent the stage from receiving this click
+              handleOpenChat(agent);
+          });
           
           // คำนวณความสูงของป้ายชื่อให้สัมพันธ์กับสเกล
           const finalHeight = agent.avatar ? (80 * (agent.sprite_scale || 1.0)) : 30;
