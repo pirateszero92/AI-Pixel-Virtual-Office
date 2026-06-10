@@ -326,6 +326,12 @@ export default function Home() {
   useEffect(() => {
     if (!canvasContainerRef.current) return;
     const container = canvasContainerRef.current;
+    
+    // Clear old canvas if React strict mode double-invokes
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+
     const app = new PIXI.Application();
     
     async function initPixi() {
@@ -333,29 +339,44 @@ export default function Home() {
         resizeTo: container,
         backgroundColor: 0x111827,
       });
+      
       container.appendChild(app.canvas);
 
-      // Load Map Background
+      let bgTexture: PIXI.Texture;
       try {
-        const bgTexture = await PIXI.Assets.load('/office_map.png');
+        bgTexture = await PIXI.Assets.load('/office_map.png');
         const bgSprite = new PIXI.Sprite(bgTexture);
-        bgSprite.width = app.screen.width;
-        bgSprite.height = app.screen.height;
         app.stage.addChildAt(bgSprite, 0);
       } catch (err) {
         console.warn("office_map.png not found. Using dark background.");
+        // Mock texture if missing
+        const g = new PIXI.Graphics().rect(0,0,1920,1080).fill(0x222222);
+        bgTexture = app.renderer.generateTexture(g);
+        const bgSprite = new PIXI.Sprite(bgTexture);
+        app.stage.addChildAt(bgSprite, 0);
       }
 
-      // ระบบหาพิกัด (Developer Style)
-      app.canvas.addEventListener('click', (e) => {
-          const rect = app.canvas.getBoundingClientRect();
-          // แปลงพิกัด mouse เป็นพิกัดภายใน canvas ตาม scale
-          const scaleX = app.screen.width / rect.width;
-          const scaleY = app.screen.height / rect.height;
-          const x = (e.clientX - rect.left) * scaleX;
-          const y = (e.clientY - rect.top) * scaleY;
-          console.log(`🎯 พิกัดที่คุณคลิก -> x: ${x.toFixed(2)}, y: ${y.toFixed(2)}`);
-          setLastClickedPos({ x: Math.round(x), y: Math.round(y) });
+      const updateScale = () => {
+          const scale = Math.min(app.screen.width / bgTexture.width, app.screen.height / bgTexture.height);
+          app.stage.scale.set(scale);
+          app.stage.x = (app.screen.width - bgTexture.width * scale) / 2;
+          app.stage.y = (app.screen.height - bgTexture.height * scale) / 2;
+      };
+      
+      updateScale();
+      window.addEventListener('resize', () => {
+          setTimeout(updateScale, 50);
+      });
+
+      // ระบบหาพิกัด (Developer Style) - Use PixiJS event system
+      app.stage.eventMode = 'static';
+      app.stage.hitArea = new PIXI.Rectangle(0, 0, bgTexture.width, bgTexture.height);
+      app.stage.on('pointerdown', (e) => {
+          const pos = e.getLocalPosition(app.stage);
+          console.log(`🎯 พิกัดที่คุณคลิก -> x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}`);
+          if (pos.x >= 0 && pos.x <= bgTexture.width && pos.y >= 0 && pos.y <= bgTexture.height) {
+              setLastClickedPos({ x: Math.round(pos.x), y: Math.round(pos.y) });
+          }
       });
 
       // Mock Room Positions
