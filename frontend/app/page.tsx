@@ -356,17 +356,7 @@ export default function Home() {
         app.stage.addChildAt(bgSprite, 0);
       }
 
-      const updateScale = () => {
-          const scale = Math.min(app.screen.width / bgTexture.width, app.screen.height / bgTexture.height);
-          app.stage.scale.set(scale);
-          app.stage.x = (app.screen.width - bgTexture.width * scale) / 2;
-          app.stage.y = (app.screen.height - bgTexture.height * scale) / 2;
-      };
-      
-      updateScale();
-      window.addEventListener('resize', () => {
-          setTimeout(updateScale, 50);
-      });
+      // No static updateScale needed, handled in ticker below
 
       // ระบบหาพิกัด (Developer Style) - Use PixiJS event system
       app.stage.eventMode = 'static';
@@ -381,9 +371,9 @@ export default function Home() {
 
       // Mock Room Positions
       const locations = [
-        { name: "CEO Room", x: app.screen.width * 0.2, y: app.screen.height * 0.2, color: 0x38bdf8 },
-        { name: "Large Office", x: app.screen.width * 0.7, y: app.screen.height * 0.4, color: 0xa855f7 },
-        { name: "Meeting Room", x: app.screen.width * 0.5, y: app.screen.height * 0.2, color: 0xef4444 },
+        { name: "CEO Room", x: bgTexture.width * 0.2, y: bgTexture.height * 0.2, color: 0x38bdf8 },
+        { name: "Large Office", x: bgTexture.width * 0.7, y: bgTexture.height * 0.4, color: 0xa855f7 },
+        { name: "Meeting Room", x: bgTexture.width * 0.5, y: bgTexture.height * 0.2, color: 0xef4444 },
       ];
 
       locations.forEach(loc => {
@@ -496,8 +486,8 @@ export default function Home() {
           spriteContainer.addChild(text);
 
           // ตั้งค่าพิกัดโต๊ะทำงานจากฐานข้อมูล
-          let deskX = agent.x || app.screen.width * 0.5;
-          let deskY = agent.y || app.screen.height * 0.5;
+          let deskX = agent.x || bgTexture.width * 0.5;
+          let deskY = agent.y || bgTexture.height * 0.5;
 
           spriteContainer.x = deskX;
           spriteContainer.y = deskY;
@@ -512,6 +502,14 @@ export default function Home() {
       }
 
       app.ticker.add(() => {
+        // อัปเดต Scale ทุกเฟรมเพื่อป้องกันภาพเพี้ยนตอนย่อหน้าต่าง
+        if (bgTexture) {
+          const scale = Math.min(app.screen.width / bgTexture.width, app.screen.height / bgTexture.height);
+          app.stage.scale.set(scale);
+          app.stage.x = (app.screen.width - bgTexture.width * scale) / 2;
+          app.stage.y = (app.screen.height - bgTexture.height * scale) / 2;
+        }
+
         const currentWalkSpeed = walkSpeedRef.current;
         Object.keys(agentSprites.current).forEach((idStr) => {
           const id = parseInt(idStr);
