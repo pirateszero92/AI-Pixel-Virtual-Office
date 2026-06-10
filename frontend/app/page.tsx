@@ -335,26 +335,49 @@ export default function Home() {
     const app = new PIXI.Application();
     
     async function initPixi() {
-      await app.init({
-        resizeTo: container,
-        backgroundColor: 0x111827,
-      });
-      
-      container.appendChild(app.canvas);
-
       let bgTexture: PIXI.Texture;
       try {
         bgTexture = await PIXI.Assets.load('/office_map.png');
-        const bgSprite = new PIXI.Sprite(bgTexture);
-        app.stage.addChildAt(bgSprite, 0);
       } catch (err) {
         console.warn("office_map.png not found. Using dark background.");
-        // Mock texture if missing
         const g = new PIXI.Graphics().rect(0,0,1920,1080).fill(0x222222);
         bgTexture = app.renderer.generateTexture(g);
-        const bgSprite = new PIXI.Sprite(bgTexture);
-        app.stage.addChildAt(bgSprite, 0);
       }
+
+      await app.init({
+        width: bgTexture.width,
+        height: bgTexture.height,
+        backgroundColor: 0x111827,
+      });
+      
+      app.canvas.style.width = '100%';
+      app.canvas.style.height = '100%';
+      container.appendChild(app.canvas);
+
+      const resizeCanvas = () => {
+          const parent = container.parentElement;
+          if (!parent) return;
+          const parentWidth = parent.clientWidth;
+          const parentHeight = parent.clientHeight;
+          const mapRatio = bgTexture.width / bgTexture.height;
+          const parentRatio = parentWidth / parentHeight;
+          
+          if (parentRatio > mapRatio) {
+              container.style.width = `${parentHeight * mapRatio}px`;
+              container.style.height = `${parentHeight}px`;
+          } else {
+              container.style.width = `${parentWidth}px`;
+              container.style.height = `${parentWidth / mapRatio}px`;
+          }
+      };
+      
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      const bgSprite = new PIXI.Sprite(bgTexture);
+      app.stage.addChildAt(bgSprite, 0);
+
+      // (Background and texture init moved up)
 
       // No static updateScale needed, handled in ticker below
 
@@ -502,13 +525,7 @@ export default function Home() {
       }
 
       app.ticker.add(() => {
-        // อัปเดต Scale ทุกเฟรมเพื่อป้องกันภาพเพี้ยนตอนย่อหน้าต่าง
-        if (bgTexture) {
-          const scale = Math.min(app.screen.width / bgTexture.width, app.screen.height / bgTexture.height);
-          app.stage.scale.set(scale);
-          app.stage.x = (app.screen.width - bgTexture.width * scale) / 2;
-          app.stage.y = (app.screen.height - bgTexture.height * scale) / 2;
-        }
+        // scale logic removed, using CSS wrapper now
 
         const currentWalkSpeed = walkSpeedRef.current;
         Object.keys(agentSprites.current).forEach((idStr) => {
@@ -670,7 +687,9 @@ export default function Home() {
             ☰
           </button>
         )}
-        <div ref={canvasContainerRef} className="absolute inset-0" />
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div ref={canvasContainerRef} className="pointer-events-auto" />
+        </div>
         
         {/* Floating Activity Feed */}
         <div className="absolute bottom-6 right-6 w-80 bg-slate-900/80 backdrop-blur-md p-4 rounded-xl border border-slate-700 shadow-2xl pointer-events-none">
