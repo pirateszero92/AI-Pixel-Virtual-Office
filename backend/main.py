@@ -503,9 +503,11 @@ async def lifespan(app: FastAPI):
     init_minio()
     
     # Reset all agents to Idle on startup to fix stuck statuses
+    # and reset any stuck "In Progress" tasks to "Todo"
     db = SessionLocal()
     try:
         db.query(models.AgentModel).update({"status": "Idle"})
+        db.query(models.TaskModel).filter(models.TaskModel.status == "In Progress").update({"status": "Todo"})
         db.commit()
     except Exception as e:
         print(f"Error resetting agent statuses: {e}")
