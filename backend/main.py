@@ -900,6 +900,31 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     db.refresh(new_task)
     return new_task
 
+@app.delete("/tasks/{task_id}")
+async def delete_task(task_id: int, db: Session = Depends(get_db)):
+    task = db.query(models.TaskModel).filter(models.TaskModel.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    # Reset the agent to Idle if they are working on this task
+    if task.agent_id:
+        agent = db.query(models.AgentModel).filter(models.AgentModel.id == task.agent_id).first()
+        if agent:
+            agent.status = "Idle"
+            db.commit()
+            await manager.broadcast({
+                "event": "agent_state_changed",
+                "agent_id": agent.id,
+                "name": agent.name,
+                "status": "Idle",
+                "action": "return_to_idle"
+            })
+            print(f"Task {task_id} deleted. Reset agent {agent.name} to Idle.")
+
+    db.delete(task)
+    db.commit()
+    return {"status": "success", "message": "Task cancelled and deleted"}
+
 @app.get("/workspace/files")
 def list_workspace_files():
     try:

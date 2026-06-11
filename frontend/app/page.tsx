@@ -304,6 +304,22 @@ export default function Home() {
     }
   };
 
+  const handleCancelTask = async (taskId: number) => {
+    if (!confirm("คุณต้องการยกเลิกและลบงานนี้ใช่หรือไม่?")) return;
+    try {
+      const res = await fetch(`http://127.0.0.1:8000/tasks/${taskId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        fetchTasks();
+      } else {
+        alert("ไม่สามารถยกเลิกงานได้");
+      }
+    } catch (e) {
+      console.error("ยกเลิก Task ล้มเหลว", e);
+    }
+  };
+
   const handleCreateAgent = async () => {
     if (!newAgentName || !newAgentRole) return;
     try {
@@ -1384,7 +1400,10 @@ export default function Home() {
                     <h3 className="font-bold text-slate-400 border-b border-slate-700 pb-3 mb-4">{status} <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full ml-2">{tasks.filter(t => t.status === status).length}</span></h3>
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pr-2">
                         {tasks.filter(t => t.status === status).map(task => (
-                            <div key={task.id} className="bg-slate-800/80 hover:bg-slate-700/80 border border-slate-600 p-4 rounded-lg shadow-sm transition-colors cursor-grab border-l-4 border-l-purple-500">
+                            <div key={task.id} className="bg-slate-800/80 hover:bg-slate-700/80 border border-slate-600 p-4 rounded-lg shadow-sm transition-colors cursor-grab border-l-4 border-l-purple-500 relative pr-8">
+                                <button onClick={() => handleCancelTask(task.id)} className="text-slate-500 hover:text-red-400 text-xs font-bold p-1 hover:bg-red-500/10 rounded transition-colors absolute top-2 right-2" title="ยกเลิกงาน">
+                                    ✖
+                                </button>
                                 <div className="font-bold text-slate-100 text-sm mb-1">{task.title}</div>
                                 <div className="text-xs text-slate-400 line-clamp-2">{task.description}</div>
                                 {task.agent_id && (
