@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text
 from database import Base
 import datetime
+from pgvector.sqlalchemy import Vector
 
 class AgentModel(Base):
     __tablename__ = "agents" # ชื่อตารางในฐานข้อมูล
@@ -38,6 +39,9 @@ class AgentModel(Base):
     # การตั้งค่า AI ประจำตัว Agent
     provider_id = Column(Integer, nullable=True) # อ้างอิง ID ของ ProviderModel
     model_name = Column(String, nullable=True) # เช่น gemini-1.5-flash, llama-3-8b
+
+    # เป้าหมายและความนึกคิด
+    goals = Column(String, nullable=True, default="[]") # เก็บเป็น JSON string ของเป้าหมาย
 
 class MapItemModel(Base):
     __tablename__ = "map_items"
@@ -84,6 +88,8 @@ class TaskModel(Base):
     description = Column(String, nullable=True)
     status = Column(String, default="Todo") # Todo, In Progress, Review, Done
     agent_id = Column(Integer, nullable=True) # ID ของ Agent ที่รับงานนี้ไปทำ
+    pipeline_stage = Column(String, default="pending") # pending, planning, coding, designing, testing, security, deploying, reviewing, done
+    pipeline_context = Column(Text, default="") # สะสม context จากทุกขั้นตอนของ pipeline
 
 class MemoryModel(Base):
     __tablename__ = "memories"
@@ -92,3 +98,25 @@ class MemoryModel(Base):
     agent_id = Column(Integer, index=True, nullable=False)
     content = Column(String, nullable=False)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+
+class DocumentModel(Base):
+    __tablename__ = "documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    embedding = Column(Vector(384)) # For all-MiniLM-L6-v2 which has 384 dimensions
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class MeetingModel(Base):
+    __tablename__ = "meetings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    topic = Column(String, nullable=False)
+    status = Column(String, default="Scheduled") # Scheduled, In Progress, Completed
+    participants = Column(String, nullable=False) # JSON string array of agent IDs: "[1, 2, 3]"
+    meeting_type = Column(String, default="team") # 1-on-1, team, department, company
+    transcript = Column(Text, nullable=True, default="")
+    summary = Column(Text, nullable=True)
+    action_items = Column(Text, nullable=True) # JSON array of auto-generated tasks
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

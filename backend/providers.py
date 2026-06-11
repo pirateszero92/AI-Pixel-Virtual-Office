@@ -18,7 +18,7 @@ class BaseProvider(ABC):
         pass
 
     @abstractmethod
-    async def chat(self, model: str, system_prompt: str, user_prompt: str, agent_id: Optional[str] = None, max_tokens: int = 1024) -> str:
+    async def chat(self, model: str, system_prompt: str, user_prompt: str, agent_id: Optional[str] = None, max_tokens: int = 4096) -> str:
         pass
 
     @abstractmethod
@@ -57,7 +57,7 @@ class OpenAICompatibleProvider(BaseProvider):
         except Exception:
             return False
 
-    async def chat(self, model: str, system_prompt: str, user_prompt: str, agent_id: Optional[str] = None, max_tokens: int = 1024) -> str:
+    async def chat(self, model: str, system_prompt: str, user_prompt: str, agent_id: Optional[str] = None, max_tokens: int = 4096) -> str:
         async with self._lock:
             try:
                 payload = {
@@ -110,7 +110,7 @@ class GeminiProvider(BaseProvider):
         except Exception:
             return False
 
-    async def chat(self, model: str, system_prompt: str, user_prompt: str, agent_id: Optional[str] = None, max_tokens: int = 1024) -> str:
+    async def chat(self, model: str, system_prompt: str, user_prompt: str, agent_id: Optional[str] = None, max_tokens: int = 4096) -> str:
         try:
             # Gemini URL format: /models/{model}:generateContent
             url = f"{self.base_url}/{model}:generateContent?key={self.api_key}"
