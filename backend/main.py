@@ -59,8 +59,20 @@ async def process_task(task_id: int, agent_id: int):
         peer_text = "\n".join([f"- ID: {p.id}, Name: {p.name}, Role: {p.role}" for p in peers])
         peer_section = f"\n\nYour Colleagues (You can assign tasks using create_task or send_message to their ID):\n{peer_text}" if peers else ""
 
+        # Fetch Goals
+        goals_list = []
+        if agent.goals:
+            try:
+                goals_list = json.loads(agent.goals)
+            except Exception as ge:
+                print(f"Error parsing agent goals: {ge}")
+        goals_section = ""
+        if goals_list:
+            goals_text = "\n".join([f"- {g}" for g in goals_list])
+            goals_section = f"\n\nYour Current Goals/Objectives:\n{goals_text}"
+
         # Let AI think
-        system_prompt = f"You are {agent.name}, role: {agent.role}. Personality: {agent.personality}. You are working autonomously on a background task. The user CANNOT reply to you. You MUST complete the task using the tools and information available. If you need someone else to do a part of the job, use create_task to assign it to them. ALWAYS output [DONE] when you finish your turn." + memory_section + peer_section
+        system_prompt = f"You are {agent.name}, role: {agent.role}. Personality: {agent.personality}. You are working autonomously on a background task. The user CANNOT reply to you. You MUST complete the task using the tools and information available. If you need someone else to do a part of the job, use create_task to assign it to them. ALWAYS output [DONE] when you finish your turn." + goals_section + memory_section + peer_section
         system_prompt += "\n\n" + tools.TOOL_INSTRUCTIONS
         
         setting = db.query(models.SettingModel).filter(models.SettingModel.key == "max_tokens").first()
