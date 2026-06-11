@@ -199,7 +199,7 @@ async def collaboration_loop():
         await asyncio.sleep(10)
         db = SessionLocal()
         try:
-            tasks = db.query(models.TaskModel).filter(models.TaskModel.status == "Todo").order_by(models.TaskModel.id.asc()).all()
+            tasks = db.query(models.TaskModel).filter(models.TaskModel.status == "Todo", models.TaskModel.agent_id == None).order_by(models.TaskModel.id.asc()).all()
             idle_agents = db.query(models.AgentModel).filter(models.AgentModel.status == "Idle").all()
             
             if not idle_agents:
@@ -259,6 +259,31 @@ async def collaboration_loop():
                         continue
                         
                     allowed_roles = STAGE_ROLES.get(stage, [])
+                    
+                    # Self-healing: Check if ANY agent in the database can fulfill this role.
+                    # If not, bypass the stage and advance the task to prevent deadlocks.
+                    if allowed_roles:
+                        capable_agents = []
+                        all_agents = db.query(models.AgentModel).all()
+                        for r in allowed_roles:
+                            capable_agents.extend([a for a in all_agents if a.role and r in a.role.lower()])
+                        
+                        if not capable_agents:
+                            print(f"[Collaboration] Warning: No agent in the database has a role matching {allowed_roles} for stage '{stage}'. Auto-advancing task '{t.title}'.")
+                            next_stages = ["pending", "coding", "designing", "testing", "security", "deploying", "reviewing", "done"]
+                            try:
+                                current_idx = next_stages.index(stage)
+                                next_stage = next_stages[current_idx + 1]
+                            except Exception:
+                                next_stage = "done"
+                            
+                            if next_stage == "done":
+                                t.status = "Done"
+                                t.pipeline_stage = "done"
+                            else:
+                                t.pipeline_stage = next_stage
+                            db.commit()
+                            continue
                     
                     selected_agent = None
                     # Find first idle agent that matches the required role

@@ -305,7 +305,7 @@ async def autonomous_agent_loop():
         await asyncio.sleep(10)
         db = SessionLocal()
         try:
-            tasks = db.query(models.TaskModel).filter(models.TaskModel.status == "Todo").order_by(models.TaskModel.id.asc()).all()
+            tasks = db.query(models.TaskModel).filter(models.TaskModel.status == "Todo", models.TaskModel.agent_id != None).order_by(models.TaskModel.id.asc()).all()
             idle_agents = db.query(models.AgentModel).filter(models.AgentModel.status == "Idle").all()
             
             if not idle_agents:
@@ -326,13 +326,10 @@ async def autonomous_agent_loop():
                         break
                     
                     selected_agent = None
-                    if t.agent_id:
-                        for a in idle_agents:
-                            if a.id == t.agent_id:
-                                selected_agent = a
-                                break
-                    else:
-                        selected_agent = idle_agents[0]
+                    for a in idle_agents:
+                        if a.id == t.agent_id:
+                            selected_agent = a
+                            break
                     
                     if selected_agent:
                         idle_agents.remove(selected_agent)
@@ -516,9 +513,11 @@ async def lifespan(app: FastAPI):
         
     task1 = asyncio.create_task(collaboration.collaboration_loop())
     task2 = asyncio.create_task(meeting_loop())
+    task3 = asyncio.create_task(autonomous_agent_loop())
     yield
     task1.cancel()
     task2.cancel()
+    task3.cancel()
 
 from sqlalchemy import text
 with engine.connect() as conn:
